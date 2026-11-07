@@ -8,7 +8,7 @@
 /* ===== 同词相遇 · 双人联网版 =====
    视觉方向：信纸 × 朱砂印 · 两台设备各写一词，同时揭晓。
    色：暖纸底 + 墨字 + 甲朱砂 / 乙青蓝 + 玉石绿(相遇)。
-   型：宋体作揭晓大字、黑体作界面。布局：居中单列，双人面板并排。 */
+   型：宋体作揭晓大字、黑体作界面。布局：居中单列，双人面板上下排列。 */
 :root{
   --bg:#F5EFE3; --bg-2:#EDE4D2;
   --surface:#FFFDF8; --surface-2:#F0E7D6;
@@ -146,7 +146,7 @@ body.urgent .timer .time b{ color:var(--accent); animation:pulse 1s infinite; }
 @keyframes pulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.14);} }
 
 /* 双人面板 */
-.duo{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.duo{ display:grid; grid-template-columns:1fr; gap:14px; }
 .panel{
   background:var(--surface); border:1px solid var(--surface-2);
   border-radius:18px; overflow:hidden; box-shadow:var(--shadow);
@@ -193,6 +193,9 @@ body.urgent .timer .time b{ color:var(--accent); animation:pulse 1s infinite; }
 .verdict.win{ color:var(--match); }
 .verdict.lose{ color:var(--muted); }
 .roundnote{ text-align:center; margin-top:8px; color:var(--muted); font-size:13px; }
+.playhist{ margin:16px auto 0; max-width:520px; text-align:left; }
+.playhist h3{ font-size:12px; letter-spacing:.14em; color:var(--muted); margin:0 0 8px; font-weight:500; }
+.playhist ul{ list-style:none; margin:0; padding:0; display:grid; gap:6px; }
 
 .hint{ margin:20px auto 0; max-width:480px; text-align:center; color:var(--muted); font-size:13px; line-height:1.7; }
 
@@ -326,6 +329,10 @@ body.urgent .timer .time b{ color:var(--accent); animation:pulse 1s infinite; }
 
     <div class="verdict" id="verdict" aria-live="polite"></div>
     <div class="roundnote">已进行 <b id="rounds">0</b> 轮</div>
+    <div class="playhist" id="playHist" hidden>
+      <h3>历史词语</h3>
+      <ul id="playHistList"></ul>
+    </div>
     <button class="again restart" id="restart" type="button" hidden>再来一局</button>
   </div>
 
@@ -447,6 +454,7 @@ body.urgent .timer .time b{ color:var(--accent); animation:pulse 1s infinite; }
   function beginInput(){
     phase = "input"; locked = {A:false,B:false}; words = {A:"",B:""};
     matched = false; timeLeft = ROUND_SEC; round++;
+    inputEl("A").value = ""; inputEl("B").value = "";
     $("verdict").textContent = ""; $("verdict").className = "verdict";
     document.body.classList.remove("urgent");
     renderAll(); updateTimer();
@@ -486,6 +494,22 @@ body.urgent .timer .time b{ color:var(--accent); animation:pulse 1s infinite; }
   function pushHistory(match){
     history.push({a:words.A, b:words.B, match:match});
     $("rounds").textContent = history.length;
+    renderPlayHist();
+  }
+  function renderPlayHist(){
+    var box = $("playHist");
+    if(!history.length){ box.hidden = true; return; }
+    box.hidden = false;
+    var ul = $("playHistList"); ul.innerHTML = "";
+    history.forEach(function(h, i){
+      var li = document.createElement("li");
+      li.className = h.match ? "his his-match" : "his";
+      li.innerHTML =
+        '<span class="his-n">第 '+(i+1)+' 轮</span>'+
+        '<span class="his-words"><em class="w-a">'+esc(h.a || "—")+'</em><em class="vs">/</em><em class="w-b">'+esc(h.b || "—")+'</em></span>'+
+        (h.match ? '<span class="his-ok">相遇 ✓</span>' : '');
+      ul.appendChild(li);
+    });
   }
   function win(){
     pushHistory(true);
@@ -544,6 +568,7 @@ body.urgent .timer .time b{ color:var(--accent); animation:pulse 1s infinite; }
     $("rounds").textContent = "0";
     $("overlay").hidden = true; stopConfetti();
     $("restart").hidden = true;
+    renderPlayHist();
     startReady();
   }
 
@@ -559,6 +584,7 @@ body.urgent .timer .time b{ color:var(--accent); animation:pulse 1s infinite; }
     else if(m.t === "lock"){ locked[o] = true; words[o] = m.w; renderPeerPanel(); evaluate(); }
     else if(m.t === "unlock"){ locked[o] = false; words[o] = ""; renderPeerPanel(); }
     else if(m.t === "restart"){ doRestart(); }
+    else if(m.t === "hello"){ /* 对方已连接并自报角色 */ }
   }
   function genCode(){
     var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", s = "";
@@ -599,6 +625,7 @@ body.urgent .timer .time b{ color:var(--accent); animation:pulse 1s infinite; }
     $("nameA").textContent = myRole === "A" ? "甲 · 你" : "甲 · 对手";
     $("nameB").textContent = myRole === "B" ? "乙 · 你" : "乙 · 对手";
     gameStart = Date.now();
+    send({t:"hello", role:myRole});
     startReady();
   }
   function onDisconnect(){
