@@ -318,7 +318,7 @@ body.urgent .timer .time b{ color:var(--accent); animation:pulse 1s infinite; }
 
     <div class="duo">
       <section class="panel panel-a" id="panelA">
-        <header class="phead"><span class="pname" id="nameA">甲</span><span class="pstatus" id="statusA">—</span></header>
+        <header class="phead"><span class="pname" id="nameA">你</span><span class="pstatus" id="statusA">—</span></header>
         <div class="pbody">
           <input class="pinput" id="inputA" maxlength="8" placeholder="输入一个词" autocomplete="off" spellcheck="false">
           <div class="pmsg" id="msgA" hidden></div>
@@ -329,7 +329,7 @@ body.urgent .timer .time b{ color:var(--accent); animation:pulse 1s infinite; }
       </section>
 
       <section class="panel panel-b" id="panelB">
-        <header class="phead"><span class="pname" id="nameB">乙</span><span class="pstatus" id="statusB">—</span></header>
+        <header class="phead"><span class="pname" id="nameB">对手</span><span class="pstatus" id="statusB">—</span></header>
         <div class="pbody">
           <input class="pinput" id="inputB" maxlength="8" placeholder="输入一个词" autocomplete="off" spellcheck="false">
           <div class="pmsg" id="msgB" hidden></div>
@@ -643,10 +643,10 @@ body.urgent .timer .time b{ color:var(--accent); animation:pulse 1s infinite; }
   }
   function onConnected(){
     $("lobby").hidden = true; $("game").hidden = false;
-    $("connRole").textContent = myRole === "A" ? "你是甲（房主）" : "你是乙";
+    $("connRole").textContent = myRole === "A" ? "你是房主" : "你已加入";
     $("connCode").textContent = "房间码 " + roomCode;
-    $("nameA").textContent = myRole === "A" ? "甲 · 你" : "甲 · 对手";
-    $("nameB").textContent = myRole === "B" ? "乙 · 你" : "乙 · 对手";
+    $("nameA").textContent = myRole === "A" ? "你" : "对手";
+    $("nameB").textContent = myRole === "B" ? "你" : "对手";
     gameStart = Date.now();
     send({t:"hello", role:myRole});
     startReady();
