@@ -1,0 +1,707 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>同词相遇</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+<style>
+/* ===== 同词相遇 · 双人联网版 =====
+   视觉方向：信纸 × 朱砂印 · 两台设备各写一词，同时揭晓。
+   色：暖纸底 + 墨字 + 甲朱砂 / 乙青蓝 + 玉石绿(相遇)。
+   型：宋体作揭晓大字、黑体作界面。布局：居中单列，双人面板并排。 */
+:root{
+  --bg:#F5EFE3; --bg-2:#EDE4D2;
+  --surface:#FFFDF8; --surface-2:#F0E7D6;
+  --fg:#2B251C; --muted:#7C7160;
+  --accent:#BC4327; --accent-ink:#FFFDF8;
+  --pa:#BC4327; --pa-soft:#F5E2DA;
+  --pb:#2E6E8C; --pb-soft:#DCE9F0;
+  --match:#3E6E52; --match-ink:#F2F7F1; --gold:#C9A24B;
+  --danger:#B33A2B;
+  --shadow:0 1px 2px rgba(43,37,28,.06), 0 10px 28px rgba(43,37,28,.10);
+  --shadow-lg:0 2px 6px rgba(43,37,28,.10), 0 24px 64px rgba(43,37,28,.22);
+  --ring:0 0 0 3px rgba(188,67,39,.35);
+  --serif:"Noto Serif SC","Songti SC","STSong",serif;
+  --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#191510; --bg-2:#221C15;
+    --surface:#241F19; --surface-2:#2D2720;
+    --fg:#EFE7D8; --muted:#A2957E;
+    --accent:#E2683E; --accent-ink:#1B130E;
+    --pa:#E2683E; --pa-soft:#3A241C;
+    --pb:#6FA6C4; --pb-soft:#1E2C34;
+    --match:#6EA583; --match-ink:#10231A; --gold:#D9B464;
+    --danger:#E2683E;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.35);
+    --shadow-lg:0 2px 6px rgba(0,0,0,.5), 0 24px 64px rgba(0,0,0,.55);
+    --ring:0 0 0 3px rgba(226,104,62,.4);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#191510; --bg-2:#221C15;
+  --surface:#241F19; --surface-2:#2D2720;
+  --fg:#EFE7D8; --muted:#A2957E;
+  --accent:#E2683E; --accent-ink:#1B130E;
+  --pa:#E2683E; --pa-soft:#3A241C;
+  --pb:#6FA6C4; --pb-soft:#1E2C34;
+  --match:#6EA583; --match-ink:#10231A; --gold:#D9B464;
+  --danger:#E2683E;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.35);
+  --shadow-lg:0 2px 6px rgba(0,0,0,.5), 0 24px 64px rgba(0,0,0,.55);
+  --ring:0 0 0 3px rgba(226,104,62,.4);
+  color-scheme:dark;
+}
+
+html,body{ height:100%; }
+body{
+  background:var(--bg);
+  background-image:radial-gradient(circle at 12% 8%, var(--bg-2) 0, transparent 42%),
+                   radial-gradient(circle at 88% 92%, var(--bg-2) 0, transparent 46%);
+  color:var(--fg);
+  font-family:var(--sans);
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:24px 56px;
+  margin:0;
+}
+.app{ max-width:640px; margin:0 auto; }
+
+/* 顶部 */
+.top{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.brand{ display:flex; align-items:center; gap:14px; }
+.seal{
+  flex:0 0 auto; width:46px; height:46px; display:grid; place-items:center;
+  background:var(--accent); color:var(--accent-ink);
+  font-family:var(--serif); font-size:24px; font-weight:700;
+  border-radius:8px; transform:rotate(-4deg); box-shadow:var(--shadow);
+}
+.brand h1{ margin:0; font-family:var(--serif); font-size:26px; font-weight:700; letter-spacing:.06em; text-wrap:balance; }
+.brand .tag{ margin:2px 0 0; color:var(--muted); font-size:13px; line-height:1.5; }
+.mute{
+  flex:0 0 auto; margin-top:6px; font:inherit; font-size:13px; color:var(--muted);
+  background:var(--surface); border:1px solid var(--surface-2);
+  border-radius:999px; padding:7px 13px; cursor:pointer;
+}
+.mute:focus-visible{ outline:none; box-shadow:var(--ring); }
+
+/* 房间大厅 */
+.lobby{ margin:26px auto 0; max-width:420px; }
+.lobby-card{
+  background:var(--surface); border:1px solid var(--surface-2);
+  border-radius:18px; padding:24px 20px; box-shadow:var(--shadow); text-align:center;
+}
+.lobby-title{ font-family:var(--serif); font-size:20px; font-weight:700; margin-bottom:18px; }
+.host-btn{
+  width:100%; font:inherit; font-size:16px; font-weight:700;
+  background:var(--accent); color:var(--accent-ink);
+  border:0; border-radius:12px; padding:14px; cursor:pointer;
+}
+.host-btn:focus-visible{ outline:none; box-shadow:var(--ring); }
+.or{ margin:14px 0; color:var(--muted); font-size:12px; }
+.join-row{ display:flex; gap:8px; }
+.code-input{
+  flex:1; min-width:0; font:inherit; font-size:18px; letter-spacing:.2em; text-transform:uppercase;
+  text-align:center; color:var(--fg); background:var(--surface-2);
+  border:1px solid var(--surface-2); border-radius:12px; padding:12px 8px;
+}
+.code-input:focus{ outline:none; border-color:var(--accent); box-shadow:var(--ring); background:var(--surface); }
+.join-btn{
+  font:inherit; font-size:15px; font-weight:700;
+  background:var(--surface-2); color:var(--fg);
+  border:0; border-radius:12px; padding:12px 18px; cursor:pointer; white-space:nowrap;
+}
+.join-btn:focus-visible{ outline:none; box-shadow:var(--ring); }
+.conn-status{ margin-top:16px; color:var(--muted); font-size:13px; line-height:1.6; min-height:20px; }
+.conn-status .code{ display:inline-block; margin-top:2px; font-size:28px; letter-spacing:.3em; color:var(--accent); font-weight:700; font-variant-numeric:tabular-nums; }
+.conn-status.err{ color:var(--danger); }
+
+/* 连接条 */
+.connbar{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  margin:20px 0 0; padding:9px 12px;
+  background:var(--surface); border:1px solid var(--surface-2); border-radius:12px; box-shadow:var(--shadow);
+  font-size:13px; color:var(--muted);
+}
+.conn-role{ font-weight:700; color:var(--fg); }
+.conn-code{ font-variant-numeric:tabular-nums; }
+.leave{
+  margin-left:auto; font:inherit; font-size:13px; color:var(--muted);
+  background:transparent; border:0; cursor:pointer; text-decoration:underline; text-underline-offset:3px;
+}
+
+/* 计时器 */
+.timer{ position:relative; width:96px; height:96px; margin:20px auto 16px; }
+.ring{ width:96px; height:96px; }
+.ring circle{ fill:none; stroke-width:6; }
+.ring-bg{ stroke:var(--surface-2); }
+.ring-fg{ stroke:var(--accent); stroke-linecap:round; transform:rotate(-90deg); transform-origin:50% 50%; stroke-dasharray:276.46; stroke-dashoffset:0; transition:stroke-dashoffset .9s linear, stroke .3s; }
+.timer .time{ position:absolute; inset:0; display:grid; place-items:center; text-align:center; }
+.timer .time b{ font-size:30px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1; }
+.timer .time span{ display:block; font-size:11px; color:var(--muted); margin-top:2px; }
+body.urgent .ring-fg{ stroke:var(--accent); }
+body.urgent .timer .time b{ color:var(--accent); animation:pulse 1s infinite; }
+@keyframes pulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.14);} }
+
+/* 双人面板 */
+.duo{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.panel{
+  background:var(--surface); border:1px solid var(--surface-2);
+  border-radius:18px; overflow:hidden; box-shadow:var(--shadow);
+  display:flex; flex-direction:column;
+}
+.phead{ display:flex; align-items:center; justify-content:space-between; gap:6px; padding:10px 14px; }
+.panel-a .phead{ background:var(--pa-soft); }
+.panel-b .phead{ background:var(--pb-soft); }
+.pname{ font-family:var(--serif); font-size:18px; font-weight:700; }
+.panel-a .pname{ color:var(--pa); }
+.panel-b .pname{ color:var(--pb); }
+.pstatus{ font-size:12px; color:var(--muted); }
+.pbody{ flex:1; display:grid; place-items:center; padding:16px 12px; min-height:150px; text-align:center; }
+.pinput{
+  width:100%; box-sizing:border-box; font:inherit; font-size:18px; text-align:center;
+  color:var(--fg); background:var(--surface-2); border:1px solid var(--surface-2);
+  border-radius:10px; padding:12px 8px;
+}
+.pinput:focus{ outline:none; border-color:var(--accent); box-shadow:var(--ring); background:var(--surface); }
+.pmsg{ color:var(--muted); font-size:14px; line-height:1.5; }
+.plocked{ display:grid; gap:6px; place-items:center; color:var(--muted); }
+.plocked .dots{ font-size:20px; letter-spacing:4px; color:var(--fg); }
+.plocked small{ font-size:12px; }
+.pword{
+  font-family:var(--serif); font-size:clamp(1.5rem, 6.5vw, 2.3rem); font-weight:700; letter-spacing:.04em;
+  word-break:break-all; line-height:1.2;
+}
+.panel-a .pword{ color:var(--pa); }
+.panel-b .pword{ color:var(--pb); }
+.pword.show{ animation:pop .45s both; }
+.pword.win{ color:var(--match); text-shadow:0 2px 18px rgba(62,110,82,.35); }
+@keyframes pop{ 0%{ transform:scale(.5); opacity:0;} 60%{ transform:scale(1.1);} 100%{ transform:scale(1); opacity:1;} }
+.plock{
+  font:inherit; font-size:14px; font-weight:700; color:var(--fg);
+  background:var(--surface-2); border:0; padding:11px; cursor:pointer; margin:0;
+}
+.panel-a .plock{ color:var(--accent-ink); background:var(--pa); }
+.panel-b .plock{ color:var(--accent-ink); background:var(--pb); }
+.plock:focus-visible{ outline:none; box-shadow:inset 0 0 0 3px rgba(255,255,255,.35); }
+.plock.secondary{ background:var(--surface-2); color:var(--fg); }
+
+/* 判定 */
+.verdict{ text-align:center; margin-top:18px; font-family:var(--serif); font-size:20px; font-weight:700; min-height:30px; }
+.verdict.win{ color:var(--match); }
+.verdict.lose{ color:var(--muted); }
+.roundnote{ text-align:center; margin-top:8px; color:var(--muted); font-size:13px; }
+
+.hint{ margin:20px auto 0; max-width:480px; text-align:center; color:var(--muted); font-size:13px; line-height:1.7; }
+
+/* 结算浮层 */
+.overlay{
+  position:fixed; inset:0; z-index:50; display:grid; place-items:center; padding:24px;
+  background:rgba(20,16,11,.55); backdrop-filter:blur(3px);
+}
+.overlay[hidden]{ display:none; }
+.win{
+  width:min(400px,100%); max-height:88vh; display:flex; flex-direction:column;
+  background:var(--surface); color:var(--fg);
+  border-radius:20px; padding:26px 22px; text-align:center; box-shadow:var(--shadow-lg);
+  animation:cardIn .4s both;
+}
+@keyframes cardIn{ from{ opacity:0; transform:translateY(12px) scale(.97);} to{ opacity:1; transform:none;} }
+.win .mark{ font-family:var(--serif); font-size:42px; line-height:1; color:var(--accent); }
+.win h2{ margin:12px 0 2px; font-family:var(--serif); font-size:24px; }
+.win .sub{ margin:0 0 14px; color:var(--muted); font-size:14px; }
+.win .sub b{ color:var(--match); }
+.rows{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+.row{ padding:10px 12px; background:var(--surface-2); border-radius:10px; font-size:13px; }
+.row .k{ display:block; color:var(--muted); font-size:11px; letter-spacing:.1em; }
+.row .v{ display:block; margin-top:3px; font-weight:700; font-size:16px; font-variant-numeric:tabular-nums; }
+.hist-label{ text-align:left; font-size:12px; letter-spacing:.14em; color:var(--muted); margin:6px 0 8px; }
+.hist{ list-style:none; margin:0 0 16px; padding:0; overflow-y:auto; max-height:34vh; text-align:left; display:grid; gap:6px; }
+.his{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 12px; background:var(--surface-2); border-radius:10px; font-size:14px; }
+.his .his-n{ flex:0 0 auto; color:var(--muted); font-size:12px; }
+.his .his-words{ display:flex; align-items:center; gap:8px; font-weight:600; min-width:0; }
+.his .his-words em{ font-style:normal; word-break:break-all; }
+.his .w-a{ color:var(--pa); }
+.his .w-b{ color:var(--pb); }
+.his .vs{ color:var(--muted); font-weight:400; font-size:12px; }
+.his .his-ok{ flex:0 0 auto; color:var(--match); font-size:12px; font-weight:700; }
+.his-match{ outline:1px solid var(--match); background:var(--match); }
+.his-match .his-n, .his-match .his-words em, .his-match .vs, .his-match .his-ok{ color:var(--match-ink); }
+.again{
+  width:100%; font:inherit; font-size:16px; font-weight:700;
+  background:var(--accent); color:var(--accent-ink);
+  border:0; border-radius:12px; padding:13px; cursor:pointer;
+}
+.again:focus-visible{ outline:none; box-shadow:var(--ring); }
+.dismiss{
+  margin-top:8px; font:inherit; font-size:13px; color:var(--muted);
+  background:none; border:0; cursor:pointer; text-decoration:underline; text-underline-offset:3px;
+}
+.restart{ width:min(240px,100%); margin:18px auto 0; }
+
+#confetti{ position:fixed; inset:0; z-index:60; pointer-events:none; }
+#confetti[hidden]{ display:none; }
+
+@media (max-width:430px){
+  .duo{ gap:8px; }
+  .pbody{ min-height:120px; padding:12px 8px; }
+  .pname{ font-size:15px; }
+  .pword{ font-size:1.4rem; }
+}
+@media (prefers-reduced-motion:reduce){
+  .ring-fg{ transition:none; }
+  .pword.show{ animation:none; }
+  .win{ animation:none; }
+  body.urgent .timer .time b{ animation:none; }
+}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <span class="seal" aria-hidden="true">遇</span>
+      <div>
+        <h1>同词相遇</h1>
+        <p class="tag">两台设备各开一个网页，一个创建房间、另一个输入房间码加入，各自落笔、同时揭晓。</p>
+      </div>
+    </div>
+    <button class="mute" id="muteBtn" type="button" aria-pressed="true">音效 开</button>
+  </header>
+
+  <!-- 房间大厅 -->
+  <div class="lobby" id="lobby">
+    <div class="lobby-card">
+      <div class="lobby-title">连接房间</div>
+      <button class="host-btn" id="hostBtn" type="button">创建房间</button>
+      <div class="or">或</div>
+      <div class="join-row">
+        <input class="code-input" id="codeInput" maxlength="4" placeholder="房间码" autocomplete="off" spellcheck="false">
+        <button class="join-btn" id="joinBtn" type="button">加入房间</button>
+      </div>
+      <div class="conn-status" id="connStatus">创建房间后会得到一个 4 位房间码，把它发给朋友。</div>
+    </div>
+  </div>
+
+  <!-- 游戏 -->
+  <div class="game" id="game" hidden>
+    <div class="connbar">
+      <span class="conn-role" id="connRole">—</span>
+      <span class="conn-code" id="connCode">房间码 —</span>
+      <button class="leave" id="leave" type="button">退出房间</button>
+    </div>
+
+    <div class="timer" aria-live="polite">
+      <svg class="ring" viewBox="0 0 100 100" aria-hidden="true">
+        <circle class="ring-bg" cx="50" cy="50" r="44"></circle>
+        <circle class="ring-fg" cx="50" cy="50" r="44"></circle>
+      </svg>
+      <div class="time"><b id="timeNum">30</b><span>秒</span></div>
+    </div>
+
+    <div class="duo">
+      <section class="panel panel-a" id="panelA">
+        <header class="phead"><span class="pname" id="nameA">甲</span><span class="pstatus" id="statusA">—</span></header>
+        <div class="pbody">
+          <input class="pinput" id="inputA" maxlength="8" placeholder="输入一个词" autocomplete="off" spellcheck="false">
+          <div class="pmsg" id="msgA" hidden></div>
+          <div class="plocked" id="lockedA" hidden><span class="dots">●●●●</span><small>已锁定</small></div>
+          <div class="pword" id="wordA" hidden></div>
+        </div>
+        <button class="plock" id="lockA" type="button">准备</button>
+      </section>
+
+      <section class="panel panel-b" id="panelB">
+        <header class="phead"><span class="pname" id="nameB">乙</span><span class="pstatus" id="statusB">—</span></header>
+        <div class="pbody">
+          <input class="pinput" id="inputB" maxlength="8" placeholder="输入一个词" autocomplete="off" spellcheck="false">
+          <div class="pmsg" id="msgB" hidden></div>
+          <div class="plocked" id="lockedB" hidden><span class="dots">●●●●</span><small>已锁定</small></div>
+          <div class="pword" id="wordB" hidden></div>
+        </div>
+        <button class="plock" id="lockB" type="button">准备</button>
+      </section>
+    </div>
+
+    <div class="verdict" id="verdict" aria-live="polite"></div>
+    <div class="roundnote">已进行 <b id="rounds">0</b> 轮</div>
+    <button class="again restart" id="restart" type="button" hidden>再来一局</button>
+  </div>
+
+  <p class="hint">玩法：一方创建房间、另一方加入。开局双方各自点「准备」，都准备好后开始第一轮计时。<br>之后每轮各自输入一个词并「锁定」，双方锁定后同时揭晓；相同则胜利，不同进入下一轮。</p>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="win" role="dialog" aria-modal="true" aria-labelledby="winTitle">
+    <div class="mark" aria-hidden="true">遇</div>
+    <h2 id="winTitle">相遇成功</h2>
+    <p class="sub">你们想到的是同一个词：<b id="sWord">—</b></p>
+    <div class="rows">
+      <div class="row"><span class="k">共进行</span><span class="v" id="sRounds">0 轮</span></div>
+      <div class="row"><span class="k">总用时</span><span class="v" id="sTime">00:00</span></div>
+    </div>
+    <div class="hist-label">所有词语</div>
+    <ul class="hist" id="historyList"></ul>
+    <button class="again" id="again" type="button">再来一局</button>
+    <button class="dismiss" id="dismiss" type="button">先看看牌面</button>
+  </div>
+</div>
+
+<canvas id="confetti" hidden></canvas>
+
+<script>
+(function(){
+  "use strict";
+  var ROUND_SEC = 30, CIRC = 276.46, PREFIX = "tcg";
+  var myRole = null; // "A"(甲/房主) 或 "B"(乙/加入者)
+
+  // 对局状态（两台设备各自维护，动作互相同步）
+  var phase = "connect"; // connect | ready | input | reveal
+  var ready = {A:false,B:false}, locked = {A:false,B:false}, words = {A:"",B:""};
+  var timeLeft = ROUND_SEC, timer = null, matched = false;
+  var history = [], round = 0, gameStart = 0;
+
+  var peer = null, conn = null, roomCode = "";
+
+  var audioCtx = null, confettiRAF = null, soundOn = true;
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var $ = function(id){ return document.getElementById(id); };
+  var ring = document.querySelector(".ring-fg");
+
+  function other(){ return myRole === "A" ? "B" : "A"; }
+  function inputEl(p){ return $("input"+p); }
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
+  function fmt(s){ var m=String(Math.floor(s/60)).padStart(2,"0"); var sec=String(s%60).padStart(2,"0"); return m+":"+sec; }
+
+  function updateTimer(){
+    $("timeNum").textContent = timeLeft;
+    ring.style.strokeDashoffset = (CIRC * (1 - timeLeft/ROUND_SEC)).toFixed(1);
+    document.body.classList.toggle("urgent", timeLeft <= 10 && phase === "input");
+  }
+  function clearTimer(){ if(timer){ clearInterval(timer); timer = null; } }
+
+  /* —— 面板渲染 —— */
+  function renderOwnPanel(){
+    var p = myRole;
+    if(phase === "ready"){
+      inputEl(p).value = ""; inputEl(p).hidden = true; inputEl(p).disabled = true;
+      $("msg"+p).hidden = true; $("locked"+p).hidden = true;
+      var w = $("word"+p); w.hidden = true; w.textContent = ""; w.className = "pword";
+      var btn = $("lock"+p); btn.hidden = false;
+      btn.textContent = ready[p] ? "取消" : "准备";
+      btn.classList.toggle("secondary", ready[p]);
+      $("status"+p).textContent = ready[p] ? "已准备" : "未准备";
+    } else if(phase === "input"){
+      inputEl(p).hidden = false; inputEl(p).disabled = locked[p];
+      $("msg"+p).hidden = true; $("word"+p).hidden = true;
+      $("locked"+p).hidden = !locked[p];
+      var btn = $("lock"+p);
+      if(locked[p]){
+        btn.hidden = true; $("status"+p).textContent = "已锁定";
+      } else {
+        btn.hidden = false; btn.textContent = "锁定"; btn.classList.remove("secondary");
+        $("status"+p).textContent = "输入中";
+      }
+    } else { // reveal
+      inputEl(p).hidden = true; $("msg"+p).hidden = true; $("locked"+p).hidden = true;
+      var w = $("word"+p); w.textContent = words[p] ? words[p] : "（未作答）";
+      w.hidden = false; w.className = "pword show" + (matched ? " win" : "");
+      $("lock"+p).hidden = true; $("status"+p).textContent = "已揭晓";
+    }
+  }
+  function renderPeerPanel(){
+    var p = other();
+    inputEl(p).hidden = true; inputEl(p).disabled = true; $("lock"+p).hidden = true;
+    if(phase === "ready"){
+      $("msg"+p).hidden = false; $("msg"+p).textContent = ready[p] ? "对方已准备" : "等待对方准备";
+      $("locked"+p).hidden = true; $("word"+p).hidden = true;
+      $("status"+p).textContent = ready[p] ? "已准备" : "未准备";
+    } else if(phase === "input"){
+      if(locked[p]){
+        $("msg"+p).hidden = true; $("locked"+p).hidden = false;
+      } else {
+        $("msg"+p).hidden = false; $("msg"+p).textContent = "对方输入中…"; $("locked"+p).hidden = true;
+      }
+      $("word"+p).hidden = true;
+      $("status"+p).textContent = locked[p] ? "已锁定" : "输入中";
+    } else { // reveal
+      $("msg"+p).hidden = true; $("locked"+p).hidden = true;
+      var w = $("word"+p); w.textContent = words[p] ? words[p] : "（未作答）";
+      w.hidden = false; w.className = "pword show" + (matched ? " win" : "");
+      $("status"+p).textContent = "已揭晓";
+    }
+  }
+  function renderAll(){ renderOwnPanel(); renderPeerPanel(); }
+
+  /* —— 流程 —— */
+  function startReady(){
+    phase = "ready"; ready = {A:false,B:false}; locked = {A:false,B:false}; words = {A:"",B:""};
+    matched = false; timeLeft = ROUND_SEC;
+    clearTimer();
+    $("verdict").textContent = ""; $("verdict").className = "verdict";
+    document.body.classList.remove("urgent");
+    renderAll(); updateTimer();
+  }
+  function beginInput(){
+    phase = "input"; locked = {A:false,B:false}; words = {A:"",B:""};
+    matched = false; timeLeft = ROUND_SEC; round++;
+    $("verdict").textContent = ""; $("verdict").className = "verdict";
+    document.body.classList.remove("urgent");
+    renderAll(); updateTimer();
+    clearTimer(); timer = setInterval(tick, 1000);
+  }
+  function evaluate(){
+    if(phase === "ready" && ready.A && ready.B) beginInput();
+    else if(phase === "input" && locked.A && locked.B) reveal();
+  }
+  function reveal(){
+    phase = "reveal"; clearTimer();
+    document.body.classList.remove("urgent");
+    matched = words.A !== "" && words.B !== "" && words.A === words.B;
+    renderAll();
+    if(matched){
+      var v = $("verdict"); v.textContent = "相遇成功！"; v.className = "verdict win";
+      if(soundOn) playWin();
+      if(!reduceMotion) launchConfetti();
+      setTimeout(win, 900);
+    } else {
+      var v2 = $("verdict"); v2.textContent = "还不相同，再来一轮"; v2.className = "verdict lose";
+      if(soundOn) playMismatch();
+      setTimeout(function(){ pushHistory(false); beginInput(); }, 2000);
+    }
+  }
+  function tick(){
+    timeLeft--;
+    updateTimer();
+    if(timeLeft <= 0){
+      clearTimer();
+      if(phase === "input" && !locked[myRole]){ selfLock(); }
+    } else if(timeLeft <= 5 && phase === "input" && soundOn){
+      playTick();
+    }
+  }
+
+  function pushHistory(match){
+    history.push({a:words.A, b:words.B, match:match});
+    $("rounds").textContent = history.length;
+  }
+  function win(){
+    pushHistory(true);
+    var h = history[history.length-1];
+    $("sWord").textContent = h.a;
+    $("sRounds").textContent = history.length + " 轮";
+    $("sTime").textContent = fmt(Math.max(0, Math.round((Date.now() - gameStart)/1000)));
+    buildList();
+    $("overlay").hidden = false;
+    $("restart").hidden = false;
+  }
+  function buildList(){
+    var ul = $("historyList"); ul.innerHTML = "";
+    history.forEach(function(h, i){
+      var li = document.createElement("li");
+      li.className = h.match ? "his his-match" : "his";
+      li.innerHTML =
+        '<span class="his-n">第 '+(i+1)+' 轮</span>'+
+        '<span class="his-words"><em class="w-a">'+esc(h.a || "—")+'</em><em class="vs">/</em><em class="w-b">'+esc(h.b || "—")+'</em></span>'+
+        (h.match ? '<span class="his-ok">相遇 ✓</span>' : '');
+      ul.appendChild(li);
+    });
+  }
+
+  /* —— 本地动作 —— */
+  function onReady(){
+    if(phase !== "ready") return;
+    ready[myRole] = !ready[myRole];
+    send({t:"ready", v:ready[myRole]});
+    if(soundOn){ ensureAudio(); playLock(); }
+    renderAll(); evaluate();
+  }
+  function onLock(){
+    if(phase !== "input") return;
+    if(locked[myRole]){
+      locked[myRole] = false; words[myRole] = "";
+      send({t:"unlock"});
+      renderAll();
+    } else {
+      words[myRole] = inputEl(myRole).value.trim();
+      locked[myRole] = true;
+      send({t:"lock", w:words[myRole]});
+      if(soundOn) playLock();
+      renderAll(); evaluate();
+    }
+  }
+  function selfLock(){
+    words[myRole] = inputEl(myRole).value.trim();
+    locked[myRole] = true;
+    send({t:"lock", w:words[myRole]});
+    renderAll(); evaluate();
+  }
+  function requestRestart(){ send({t:"restart"}); doRestart(); }
+  function doRestart(){
+    history = []; round = 0; gameStart = Date.now();
+    $("rounds").textContent = "0";
+    $("overlay").hidden = true; stopConfetti();
+    $("restart").hidden = true;
+    startReady();
+  }
+
+  /* —— 联网 —— */
+  function send(obj){ if(conn && conn.open){ try{ conn.send(JSON.stringify(obj)); }catch(e){} } }
+  function wire(c){
+    c.on("data", function(d){ try{ onMessage(JSON.parse(d)); }catch(e){} });
+    c.on("close", function(){ onDisconnect(); });
+  }
+  function onMessage(m){
+    var o = other();
+    if(m.t === "ready"){ ready[o] = m.v; renderAll(); evaluate(); }
+    else if(m.t === "lock"){ locked[o] = true; words[o] = m.w; renderPeerPanel(); evaluate(); }
+    else if(m.t === "unlock"){ locked[o] = false; words[o] = ""; renderPeerPanel(); }
+    else if(m.t === "restart"){ doRestart(); }
+  }
+  function genCode(){
+    var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", s = "";
+    for(var i=0;i<4;i++) s += chars[Math.floor(Math.random()*chars.length)];
+    return s;
+  }
+  function host(){
+    myRole = "A"; roomCode = genCode();
+    peer = new Peer(PREFIX + roomCode, {debug:0});
+    peer.on("open", function(){
+      $("connStatus").innerHTML = '你的房间码是<br><span class="code">'+roomCode+'</span><br><span>把它发给朋友，等他加入…</span>';
+    });
+    peer.on("connection", function(c){ conn = c; wire(c); onConnected(); });
+    peer.on("error", function(err){ connError(err); });
+  }
+  function join(){
+    myRole = "B"; roomCode = $("codeInput").value.trim().toUpperCase();
+    if(!roomCode){ $("connStatus").textContent = "请先输入房间码"; $("connStatus").className = "conn-status err"; return; }
+    peer = new Peer({debug:0});
+    peer.on("open", function(){
+      conn = peer.connect(PREFIX + roomCode, {reliable:true});
+      wire(conn);
+      conn.on("open", function(){ onConnected(); });
+    });
+    peer.on("error", function(err){ connError(err); });
+  }
+  function connError(err){
+    var t = err && err.type;
+    var msg = t === "peer-unavailable" ? "找不到这个房间码，请确认对方已创建房间" :
+              t === "unavailable-id" ? "房间码被占用，请重新创建" :
+              t ? "连接失败："+t : "连接失败";
+    $("connStatus").textContent = msg; $("connStatus").className = "conn-status err";
+  }
+  function onConnected(){
+    $("lobby").hidden = true; $("game").hidden = false;
+    $("connRole").textContent = myRole === "A" ? "你是甲（房主）" : "你是乙";
+    $("connCode").textContent = "房间码 " + roomCode;
+    $("nameA").textContent = myRole === "A" ? "甲 · 你" : "甲 · 对手";
+    $("nameB").textContent = myRole === "B" ? "乙 · 你" : "乙 · 对手";
+    gameStart = Date.now();
+    startReady();
+  }
+  function onDisconnect(){
+    resetToLobby("连接已断开");
+  }
+  function resetToLobby(msg){
+    myRole = null; clearTimer();
+    $("game").hidden = true; $("lobby").hidden = false;
+    $("connStatus").className = "conn-status";
+    $("connStatus").textContent = msg || "创建房间后会得到一个 4 位房间码，把它发给朋友。";
+  }
+  function leave(){
+    try{ if(conn) conn.close(); }catch(e){}
+    try{ if(peer) peer.destroy(); }catch(e){}
+    conn = null; peer = null;
+    resetToLobby();
+  }
+
+  /* —— 音效 —— */
+  function ensureAudio(){
+    if(audioCtx) return;
+    try{ var AC = window.AudioContext || window.webkitAudioContext; if(AC) audioCtx = new AC(); }catch(e){}
+  }
+  function tone(freq, when, dur, vol, type){
+    if(!audioCtx) return;
+    try{
+      var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = type || "sine"; o.frequency.value = freq;
+      var t = audioCtx.currentTime + when;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t); o.stop(t + dur + 0.05);
+    }catch(e){}
+  }
+  function playLock(){ tone(520, 0, .09, .05); }
+  function playTick(){ tone(920, 0, .05, .03); }
+  function playMismatch(){ tone(300, 0, .18, .06); tone(240, .12, .2, .06); }
+  function playWin(){ [523,659,784,1047].forEach(function(f,i){ tone(f, i*0.11, .3, .07); }); }
+
+  /* —— 彩带 —— */
+  function launchConfetti(){
+    var canvas = $("confetti"); canvas.hidden = false;
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    var ctx = canvas.getContext("2d");
+    var colors = ["#BC4327","#E2683E","#C9A24B","#3E6E52","#2E6E8C","#E8DCC3"];
+    var parts = [];
+    for(var i=0;i<120;i++){
+      parts.push({x:Math.random()*canvas.width, y:-20-Math.random()*canvas.height*0.4,
+        vx:(Math.random()-0.5)*2.4, vy:2+Math.random()*3.4,
+        s:4+Math.random()*6, r:Math.random()*Math.PI, vr:(Math.random()-0.5)*0.24,
+        c:colors[i%colors.length]});
+    }
+    function step(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      var alive = false;
+      parts.forEach(function(p){
+        p.x += p.vx; p.y += p.vy; p.r += p.vr;
+        if(p.y > canvas.height + 20) p.y = -20; else alive = true;
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
+        ctx.fillStyle = p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*0.62); ctx.restore();
+      });
+      if(alive) confettiRAF = requestAnimationFrame(step); else canvas.hidden = true;
+    }
+    step();
+  }
+  function stopConfetti(){ if(confettiRAF) cancelAnimationFrame(confettiRAF); $("confetti").hidden = true; }
+
+  /* —— 事件 —— */
+  $("hostBtn").addEventListener("click", function(){
+    if(!window.Peer){ $("connStatus").textContent = "联网组件加载失败，请检查网络后刷新重试"; $("connStatus").className = "conn-status err"; return; }
+    ensureAudio(); host();
+  });
+  $("joinBtn").addEventListener("click", function(){
+    if(!window.Peer){ $("connStatus").textContent = "联网组件加载失败，请检查网络后刷新重试"; $("connStatus").className = "conn-status err"; return; }
+    ensureAudio(); join();
+  });
+  $("codeInput").addEventListener("keydown", function(e){
+    if(e.key === "Enter" && !e.isComposing){ e.preventDefault(); $("joinBtn").click(); }
+  });
+  ["A","B"].forEach(function(p){
+    inputEl(p).addEventListener("keydown", function(e){
+      if(e.key === "Enter" && !e.isComposing && p === myRole){ e.preventDefault(); onLock(); }
+    });
+    $("lock"+p).addEventListener("click", function(){
+      ensureAudio();
+      if(p !== myRole) return;
+      if(phase === "ready") onReady(); else onLock();
+    });
+    inputEl(p).addEventListener("input", function(){ ensureAudio(); });
+  });
+  $("leave").addEventListener("click", leave);
+  $("again").addEventListener("click", requestRestart);
+  $("restart").addEventListener("click", requestRestart);
+  $("dismiss").addEventListener("click", function(){ $("overlay").hidden = true; });
+  $("muteBtn").addEventListener("click", function(){
+    soundOn = !soundOn;
+    this.textContent = soundOn ? "音效 开" : "音效 关";
+    this.setAttribute("aria-pressed", soundOn ? "true" : "false");
+  });
+
+  // 初始：停在房间大厅
+  updateTimer();
+})();
+</script>
