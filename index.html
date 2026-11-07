@@ -144,6 +144,12 @@ body{
 body.urgent .ring-fg{ stroke:var(--accent); }
 body.urgent .timer .time b{ color:var(--accent); animation:pulse 1s infinite; }
 @keyframes pulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.14);} }
+.lastround{ margin:0 auto 14px; max-width:520px; display:flex; align-items:center; justify-content:center; gap:10px; padding:10px 14px; background:var(--surface); border:1px solid var(--surface-2); border-radius:12px; box-shadow:var(--shadow); }
+.lastround .lr-label{ color:var(--muted); font-size:12px; white-space:nowrap; }
+.lastround .lr-word{ font-family:var(--serif); font-weight:700; font-size:18px; word-break:break-all; }
+.lastround .lr-a{ color:var(--pa); }
+.lastround .lr-b{ color:var(--pb); }
+.lastround .lr-sep{ color:var(--muted); font-size:12px; }
 
 /* 双人面板 */
 .duo{ display:grid; grid-template-columns:1fr; gap:14px; }
@@ -303,6 +309,13 @@ body.urgent .timer .time b{ color:var(--accent); animation:pulse 1s infinite; }
       <div class="time"><b id="timeNum">30</b><span>秒</span></div>
     </div>
 
+    <div class="lastround" id="lastRound" hidden>
+      <span class="lr-label">上一轮</span>
+      <span class="lr-word lr-a" id="lrA">—</span>
+      <span class="lr-sep">/</span>
+      <span class="lr-word lr-b" id="lrB">—</span>
+    </div>
+
     <div class="duo">
       <section class="panel panel-a" id="panelA">
         <header class="phead"><span class="pname" id="nameA">甲</span><span class="pstatus" id="statusA">—</span></header>
@@ -440,7 +453,17 @@ body.urgent .timer .time b{ color:var(--accent); animation:pulse 1s infinite; }
       $("status"+p).textContent = "已揭晓";
     }
   }
-  function renderAll(){ renderOwnPanel(); renderPeerPanel(); }
+  function renderAll(){ renderOwnPanel(); renderPeerPanel(); renderLastRound(); }
+  function renderLastRound(){
+    var box = $("lastRound");
+    var show = phase === "input" && history.length > 0;
+    box.hidden = !show;
+    if(show){
+      var h = history[history.length - 1];
+      $("lrA").textContent = h.a || "（未作答）";
+      $("lrB").textContent = h.b || "（未作答）";
+    }
+  }
 
   /* —— 流程 —— */
   function startReady(){
